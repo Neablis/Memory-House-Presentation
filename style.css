@@ -1,0 +1,25 @@
+
+body {
+  overflow: hidden;
+}
+
+
+#text{
+  position: absolute; 
+}
+
+.hide{
+  display: none;
+}
+
+.layer1 {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.layer2{
+	position: absolute;
+	left: 0;
+	bottom: -50px;
+}
