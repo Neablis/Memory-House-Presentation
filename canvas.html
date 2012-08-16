@@ -9,21 +9,36 @@
 </head>
 <body onload="myAddListener()">
 
-<div id="header" style="position: relative; top: 0px">
-  <canvas id="canvas" class="layer1" width="1280" height="600" 
+<div id="info">
+	<img src="gradient_lrg.jpg" class="stretch" alt="">
+		<p>phone:(321)872-8748 &nbsp; &nbsp; &nbsp;twitter:@imagineritvr&nbsp;  &nbsp; &nbsp;</p><br>
+	</img>
+</div>
+<div id="header">
+  <canvas id="canvas" class="layer1" width="1920px" height="1200px" 
    style="z-index: 0;"></canvas>
-  <canvas id="images" class="layer1" width="1280" height="600" 
+  <canvas id="images" class="layer1" width="1920px" height="1200px" 
    style="z-index: 1;"></canvas>
-</div>
-<div id="info" style="position: relative; top:600px; left: 0px; width: 100px; float:left;">
-<p>(321) VRa-tRIT</p><p>@ImagineRITVR</p><br>
-</div>
-<div id="footer" style="position: relative; top:600px; left: 100px; float:left;">
-	<canvas id="text1" width="1280" height="50" class="layer2" 
+  <canvas id="grid" class="layer1" width="1920px" height="1200px" 
    style="z-index: 2;"></canvas>
-   	<canvas id="text2" width="1280" height="50" class="layer2" 
-   style="z-index: 2;"></canvas>
+   <audio id="player" controls="controls" class="hide" preload="auto">
+	<source src="music/song.ogg" type="audio/ogg" />
+	<source src="music/song.mp3" type="audio/mp3" />
+	Your browser does not support the audio tag.
+   </audio>
 </div>
+
+<div id="footer">
+	<img src="gradient_lrg.jpg" class="stretch" alt="">
+		<div id="footer_canvas">
+			<canvas id="text1" width="1920px" height="50px" class="layer2" 
+		   style="z-index: 2;"></canvas>
+			<canvas id="text2" width="1920px" height="50px" class="layer2" 
+		   style="z-index: 2;"></canvas>
+		</div>
+	</img>
+</div>
+
 
     <video class="hide" id="video" controls
     src="">
@@ -34,8 +49,10 @@
 		var ttx  = new Array(2);
         var canvas = document.getElementById('canvas');
 		var header = document.getElementById('header');
-        var footer = document.getElementById('footer');
+        var footer = document.getElementById('footer_canvas');
         var video  = document.getElementById('video');
+		var grid  = document.getElementById('grid');
+
 
 		buff[0] = document.getElementById("text1");
 		buff[1] = document.getElementById("text2");
@@ -44,48 +61,60 @@
 		
         var tagString = 'temp';
         var imageObj = new Image();
+		var background = new Image();
 
         var ctx    = canvas.getContext('2d');
         var itx    = images.getContext('2d');
+		var btx    = grid.getContext('2d');
 		ttx[0]	   = buff[0].getContext("2d");
 		ttx[1]	   = buff[1].getContext("2d");
-		ttx[0].font = "bold 36px sans-serif";
-		ttx[1].font = "bold 36px sans-serif";
-		ttx[0].globalAlpha = 0.5; //
-		ttx[1].globalAlpha = 0.5; //
+		
+		ttx[0].font = "bold 36px georgia";
+		ttx[1].font = "bold 36px georgia";
+		ttx[0].fillStyle = "rgba(0, 0, 0, 1)";
+		ttx[1].fillStyle = "rgba(0, 0, 0, 1)";
+		ttx[0].globalAlpha = 1; //
+		ttx[1].globalAlpha = 1; //
  
         var counter = 0;
         var imageCounter = 0;
-        var imageLength = 2;
-		var imageTime = 15000;
-        var TEXT_POS_X = 1080;
-        var TEXT_POS_Y = 30;
-		var VIDEO_POS_X = 0;
-		var VIDEO_POS_Y = 0;
-		var VIDEO_POS_SCALE_X = 0;
-		var VIDEO_POS_SCALE_Y = 0;
-		var canvasHeight = 1280;
-		var canvasWidth = 500;
+		//How many images in image segment
+        var imageLength = 6;
+		//How long to show each image
+		var imageTime = 5000;
+		//how long to check if new image requested<TODO>
+		var checkSwitch = 5000;
+		//Online Mode<Use online images>
+		var isOnline = true;
+		//Delay in ms at start of show
+		var startDelay = 1000;
+        var TEXT_POS_X = 1930;
+        var TEXT_POS_Y = 40;
+		var VIDEO_POS_X = 50;
+		var VIDEO_POS_Y = 40;
+		var VIDEO_POS_SCALED_X = 1800;
+		var VIDEO_POS_SCALED_Y = 1100;
+		var canvasHeight = 1200;
+		var canvasWidth = 1920;
         var destWidth = 400;
         var destHeight = 400;
+		var playMusic = false;
 		var current=0;
-		var startDelay = 1000;
-		var staticMode = true;
+		var staticMode = false;
 		var imageCount = 1;
+		var usedImages = {};
 
         function drawText() {
 
 			buff[1- current ].style.visibility='hidden';
 			buff[ current ].style.visibility='visible';
-			ttx[current].font = "bold 36px sans-serif";
 			var newString = '';
 			if( TEXT_POS_X <=  -ttx[current].measureText(tagString).width ){
 				newString = getMessage();
 				while( newString == tagString ){
 					newString = getMessage();
 				}
-
-				TEXT_POS_X = 1200;
+				TEXT_POS_X = 1800;
 			}else{
 				if( tagString != 'temp' ){
 					TEXT_POS_X = TEXT_POS_X - 2;
@@ -94,20 +123,35 @@
 
 			if( tagString == undefined ){
 		   
-		   }else{
+			}else{
 				var punct = tagString.replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-
 				ttx[current].fillText(punct.toLowerCase(), TEXT_POS_X, TEXT_POS_Y);
 		   }	
 
-			ttx[1-current].clearRect(0,0,1280,50);
+			ttx[1-current].clearRect(0,0,canvasWidth,50);
 			current =1-current;
 		
 
         }
+		
+		function getQueryParams(qs) {
+			qs = qs.split("+").join(" ");
+			var params = {},
+				tokens,
+				re = /[?&]?([^=]+)=([^&]*)/g;
+
+			while (tokens = re.exec(qs)) {
+				params[decodeURIComponent(tokens[1])]
+					= decodeURIComponent(tokens[2]);
+			}
+
+			return params;
+		}
+
     
         video.addEventListener('play', function () {
                   var $this = this; //cache
+
                   (function loop() {
                       if (!$this.paused && !$this.ended) {
                           ctx.drawImage($this, VIDEO_POS_X, VIDEO_POS_Y, VIDEO_POS_SCALED_X, VIDEO_POS_SCALED_Y);
@@ -126,6 +170,19 @@
 		
 		function init(){
 			console.log('started');
+			if( getQueryParams(document.location.search).music ){
+				document.getElementById('player').volume = 1;
+				document.getElementById('player').play();
+			}
+			background.src = 'gradient_sm.png';
+					 btx.clearRect(0,0,canvasWidth,canvasHeight);
+					 background.onload = function(){
+						btx.drawImage( background, 20, 550, 1880, 100 );
+						btx.translate(960,0);
+						btx.rotate(90*Math.PI/180);
+						btx.drawImage( background, 0, 0, canvasHeight, 100 );
+					 }
+					 	
 			getMessage();
 	        var scene = self.setInterval("drawText()",22);
             myNewSrc();
@@ -133,122 +190,117 @@
 
 		$("body").keypress(function(event) {
 		  if ( event.which == 32 ) {
+				var docElm = document.documentElement;
+			if (docElm.requestFullscreen) {
+				docElm.requestFullscreen();
+			}
+			else if (docElm.mozRequestFullScreen) {
+				docElm.mozRequestFullScreen();
+			}
+			else if (docElm.webkitRequestFullScreen) {
+				docElm.webkitRequestFullScreen();
+			}
 			 event.preventDefault();
 			 start();
 		   }
 		  
 		});
 		
+		function toggleDiv( divElement, time, opac ){
+			if( divElement.css("opacity") > 0 ){
+				divElement.animate({
+				  opacity: opac
+				}, time);
+				
+			}else{
+				divElement.animate({
+				  opacity: opac
+				}, time);
+			}
+		
+		}
+		
         // listener function changes src
         function myNewSrc() {
           counter++;
-          console.log(counter);
           switch(counter){
           
             case 3:
 				//e
-			
-              video.src="video/05.webm";
-			  VIDEO_POS_X = 400;
-			  VIDEO_POS_Y = 150;
-			  VIDEO_POS_SCALED_X = 800;
-			  VIDEO_POS_SCALED_Y = 650;
+
+              video.src="video/02.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
+			  toggleDiv($("#grid"), 2000, 0);
               break;
             case 4:        
 				//d
-              video.src="video/06.webm";
-			  VIDEO_POS_X = 50;
-			  VIDEO_POS_Y = 50;
-			  VIDEO_POS_SCALED_X = 700;
-			  VIDEO_POS_SCALED_Y = 400;
+              video.src="video/03.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
               break;
             case 6:
 				//d
-			  video.src="video/09.webm";
-			  VIDEO_POS_X = 50;
-			  VIDEO_POS_Y = 50;
-			  VIDEO_POS_SCALED_X = 700;
-			  VIDEO_POS_SCALED_Y = 400;
+			  video.src="video/07.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
+			  toggleDiv($("#grid"), 2000, 0);
+
               break;
             case 7:
 				//e
-              video.src="video/10.webm";
-			  VIDEO_POS_X = 400;
-			  VIDEO_POS_Y = 100;
-			  VIDEO_POS_SCALED_X = 800;
-			  VIDEO_POS_SCALED_Y = 650;
+              video.src="video/13.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
               break;
             case 8:
 				//d
-		      //Center 
+		      //Center break
 			  setTimeout(delayedCenter, 10000);
               break;
             case 9:
 				//d
-		      //Center 
-			  setTimeout(delayedFiller, 10000);
-              break;			  
-			case 11:
-				//e
-              video.src="video/14.webm";
-			  VIDEO_POS_X = 400;
-			  VIDEO_POS_Y = 150;
-			  VIDEO_POS_SCALED_X = 800;
-			  VIDEO_POS_SCALED_Y = 650;
+		      //delay then more images 
+			  setTimeout(imageFilling, 10000);
+              break;	
+			case 10:
+				//d
+			 video.src="video/14.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
-              break;
+			  toggleDiv($("#grid"), 2000, 0);
+
+              break; 			  
+			case 11:
+				//d
+			  video.src="video/18.webm";
+              video.load();
+              video.play();
+              canvas.style.display = 'block';
+              break; 
 			case 12:
 				//d
-			  video.src="video/15.webm";
-			  VIDEO_POS_X = 50;
-			  VIDEO_POS_Y = 50;
-			  VIDEO_POS_SCALED_X = 700;
-			  VIDEO_POS_SCALED_Y = 400;
-              video.load();
-              video.play();
-              canvas.style.display = 'block';
-              break; 
-			case 13:
-				//d
-			  video.src="video/16.webm";
-			  VIDEO_POS_X = 50;
-			  VIDEO_POS_Y = 50;
-			  VIDEO_POS_SCALED_X = 700;
-			  VIDEO_POS_SCALED_Y = 400;
+			  video.src="video/17.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
               break;
-			case 14:
-				//e
-              video.src="video/17.webm";
-			  VIDEO_POS_X = 400;
-			  VIDEO_POS_Y = 150;
-			  VIDEO_POS_SCALED_X = 800;
-			  VIDEO_POS_SCALED_Y = 650;
+			case 13:
+			  //e
+              video.src="video/15.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
               break; 
-            case 15:
+            case 14:
               counter=0;
               header.style.display = 'none';
               footer.style.display = 'none';
-
               break;
             default:
               canvas.style.display = 'none';
@@ -259,37 +311,32 @@
         }
 		
 		function delayedCenter(){
-			  video.src="video/11.webm";
-			  VIDEO_POS_X = 50;
-			  VIDEO_POS_Y = 50;
-			  VIDEO_POS_SCALED_X = 700;
-			  VIDEO_POS_SCALED_Y = 400;
+			  video.src="video/05.webm";
               video.load();
               video.play();
               canvas.style.display = 'block';
 		}
 		
-		function delayedFiller(){
-			//I am a magical function that does nothing but is useful
-		}
-        
         function imageFilling(){
-
+		  //divToggle($("#images"), 2000, 0);
           if( images.style.display == 'none' ){
             images.style.display = 'block';
+			toggleDiv( $("#grid"), 2000, 1);
           }
-        
+			
           if( imageCounter == imageLength ){
-			itx.clearRect(0,0,1280,800);
+			itx.clearRect(0,0,canvasWidth,canvasHeight);
             console.log('finishedWithImages');
             images.style.display = 'none';
 
             imageCounter=0;
             myNewSrc();
           }else{
-			imageFadeOut();
             imageCounter++;
-            getImage();
+			$("#images").animate(
+				//use newImageHere
+				{opacity: 0}, 500,function() { getImage(); }); ;
+            //getImage();
             setTimeout("imageFilling()",imageTime); 
           }
         }
@@ -309,128 +356,191 @@
 			*/
 		}
 		
-		function imageFadeIn(iter, delay){
-			/*
-			if( iter <= 0 ){
-				return;
+		function imageFadeIn(){
+			$("#images").animate(
+				{opacity: 1}, 500);	
+		}
+		
+		function posGoA( ){
+			
+			itx.translate( 0, -(canvasHeight/2));
+			itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (canvasHeight/2/imageObj.height) )), 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ), canvasHeight/2);
+
+		}
+		
+		function posGoB(){
+			itx.translate( (canvasWidth/2)-50, 0);
+			itx.translate( 0, (canvasHeight/2));
+			itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ), canvasHeight/2);
+		}
+		
+		function posGoC(){
+			itx.translate( 0, -(canvasHeight/2));
+			itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ),canvasHeight/2);			
+
+		}
+		
+		function posGoD(){
+			itx.translate( 0, (canvasHeight/2));
+			itx.translate( -((canvasWidth/2)-50), 0);
+			itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (canvasHeight/2/imageObj.height) )), 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ), canvasHeight/2);
+		}
+		
+		function getNewImage(){
+			var path = "";
+			var top = 0;
+			jQuery.ajaxSetup({async:false});
+
+			$.get('ajax/dbwrapper.php', {cmd: 'get_x_image', number: top },function(data){	
+				path = data;
+			});
+			
+			while( usedImages[path] == 1 || top > 5){
+				top++;
+				$.get('ajax/dbwrapper.php', {cmd: 'get_x_image', number: top },function(data){	
+						path = data;
+				});
 			}
 			
-			while(itx.globalAlpha < 1){
-				itx.globalAlpha = itx.globalAlpha + .1;
+			imageObj.src = 'http://nostalgia.cias.rit.edu/uploads/Photos/' + path;
+			$("#images").animate({opacity: 1}, 500);
+			
+			if( imageCount == 0 ){
+			
+			 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					
+					imageObj.onload = function(){
+						//itx.translate( (canvasWidth/2)-50, 0);
+					itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (canvasHeight/2/imageObj.height) )), 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ), canvasHeight/2);
+					//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+					}
+			}else{
+			
+			switch(imageCount % 4){
+				
+				//section 1
+				case 0:
+					//b
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( 0, (canvasHeight/2));
+						posGoA();
+						//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+
+					}
+
+				break;
+				case 1:
+					//a
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( 0, (canvasHeight/2));
+						posGoB();
+						//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+
+					}
+				break;
+				case 2:
+					//a
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( -((canvasWidth/2)-50), 0);
+						posGoC();
+
+						//itx.drawImage( imageObj, Math.round(((canvasWidth/2)-50)-(imageObj.width * (446/imageObj.height) )), 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+					}
+				break;
+				case 3:
+					//c
+					itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( 0, -(canvasHeight/2));
+						posGoD();
+
+						//itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (446/imageObj.height) )), 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+					}
+				break;
+				}
+				usedImages[path] = true;
+
+				imageCount++;
 			}
-			iter--;
-			setTimeout(iter, delay);
-			*/
+			jQuery.ajaxSetup({async:true});
+
 		}
 		
         
         function getImage(){
-		
-		  if( staticMode ){
-			switch(imageCount){
-				case 1:
+	
+		$.get('ajax/dbwrapper.php', {cmd: 'get_image', date: '000-00-00'},function(data){				
+				imageObj.src = 'http://nostalgia.cias.rit.edu/uploads/Photos/' + data;
+				$("#images").animate({opacity: 1}, 500);
+			
+			if( imageCount == 0 ){
+			
+			 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					
+					imageObj.onload = function(){
+						//itx.translate( (canvasWidth/2)-50, 0);
+					itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (canvasHeight/2/imageObj.height) )), 0 , Math.round((imageObj.width * (canvasHeight/2/imageObj.height) ) ), canvasHeight/2);
+					//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+					}
+			}else{
+			
+			switch(imageCount % 4){
+				
+				//section 1
+				case 0:
 					//b
-					imageObj.src = 'video/01.jpg';
-					 itx.clearRect(0,0,1280,800);
-					 imageObj.onload = function(){
-						itx.drawImage( imageObj, 300, 50, 600, 600 );
-						imageFadeIn(10,75);
-					 }
-							
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( 0, (canvasHeight/2));
+						posGoA();
+						//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+
+					}
+
+				break;
+				case 1:
+					//a
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
+					imageObj.onload = function(){
+						//itx.translate( 0, (canvasHeight/2));
+						posGoB();
+						//itx.drawImage( imageObj, 0, 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
+
+					}
 				break;
 				case 2:
 					//a
-					imageObj.src = 'video/02.jpg';
-					itx.clearRect(0,0,1280,800);
+					 itx.clearRect(0,0,canvasWidth,canvasHeight);
 					imageObj.onload = function(){
-						itx.drawImage( imageObj, 0, 0, 960, 720 );
-						imageFadeIn(10,75);
+						//itx.translate( -((canvasWidth/2)-50), 0);
+						posGoC();
+
+						//itx.drawImage( imageObj, Math.round(((canvasWidth/2)-50)-(imageObj.width * (446/imageObj.height) )), 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
 					}
 				break;
 				case 3:
-					//a
-					imageObj.src = 'video/03.jpg';
-					itx.clearRect(0,0,1280,800);
-					imageObj.onload = function(){
-						itx.drawImage( imageObj, 0, 0, 960, 720 ); 
-						imageFadeIn(10,75);
-					}
-				break;
-				case 4:
 					//c
-					imageObj.src = 'video/04.jpg';
-					itx.clearRect(0,0,1280,800);
+					itx.clearRect(0,0,canvasWidth,canvasHeight);
 					imageObj.onload = function(){
-						itx.drawImage( imageObj, 500, 100, 600, 400 );
-						imageFadeIn(10,75);						
+						//itx.translate( 0, -(canvasHeight/2));
+						posGoD();
+
+						//itx.drawImage( imageObj,  Math.round(((canvasWidth/2)-50)-(imageObj.width * (446/imageObj.height) )), 0 , Math.round((imageObj.width * (446/imageObj.height) ) ), 446);
 					}
 				break;
-				case 5:
-					//c
-				imageObj.src = 'video/07.jpg';
-				itx.clearRect(0,0,1280,800);
-					imageObj.onload = function(){
-						itx.drawImage( imageObj, 500, 100, 600, 400 ); 
-						imageFadeIn(10,75);
-					}
-				break;
-				case 6:
-					//a
-					imageObj.src = 'video/08.jpg';
-					itx.clearRect(0,0,1280,800);
-					imageObj.onload = function(){
-						itx.drawImage( imageObj, 0, 0, 960, 720 ); 
-						imageFadeIn(10,75);
-					}
-				break;
-				case 7:
-					//a
-					imageObj.src = 'video/12.jpg';
-					itx.clearRect(0,0,1280,800);
-					imageObj.onload = function(){
-						itx.drawImage( imageObj, 0, 0, 960, 720 ); 
-						imageFadeIn(10,75);
-					}
-				break;
-				case 8:
-					//b
-					imageObj.src = 'video/13.jpg';
-					itx.clearRect(0,0,1280,800);
-					imageObj.onload = function(){
-						itx.drawImage( imageObj, 300, 50, 600, 600 );
-						imageFadeIn(10, 75);
-					}
-				break;				
-				
-				
-			}
-			imageCount++;
-		  }else{
-			  $.get('ajax/image.php', function(data){
-				
-				var val = jQuery.parseJSON(data);
-				console.log(val.file);
-				if( imageObj.src == 'video/'+val.file ){
-				  console.log('duplicate, try again');
-				  getImage();
-				}else{
-				 imageObj.src = 'video/'+val.file;
-				 itx.clearRect(0,0,1920,800);
-				 //itx.fillStyle = "rgba(255,255,255, 1)";
-				 itx.fillRect(200,200,500,500);
-				 //itx.drawImage( imageObj, 50, 50, destWidth, destHeight);
 				}
-				
-				
+				imageCount++;
+				}
 			  });
-			}
+
         }
         
         function getMessage(){
           $.get('ajax/tag.php', function(data){
-            
             var val = jQuery.parseJSON(data);
-            console.log(val.message);
             if( tagString == val.message ){
               console.log('duplicate, try again');
               getMessage();
